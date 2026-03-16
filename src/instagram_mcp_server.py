@@ -26,6 +26,8 @@ from .models.instagram_models import (
     InsightPeriod,
     MCPToolResult,
     PublishMediaRequest,
+    ReplyCommentRequest,
+    SendDMRequest,
 )
 
 # Configure logging
@@ -305,6 +307,278 @@ class InstagramMCPServer:
                         "required": ["recipient_id", "message"],
                     },
                 ),
+                # ── Comment Tools ────────────────────────────────
+                Tool(
+                    name="get_comments",
+                    description=(
+                        "Get comments on an Instagram post. "
+                        "Returns comment text, username, timestamp, and like count."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "media_id": {
+                                "type": "string",
+                                "description": "Instagram media ID to get comments for",
+                            },
+                            "limit": {
+                                "type": "integer",
+                                "description": "Number of comments to retrieve (max 100)",
+                                "minimum": 1,
+                                "maximum": 100,
+                                "default": 25,
+                            },
+                        },
+                        "required": ["media_id"],
+                    },
+                ),
+                Tool(
+                    name="post_comment",
+                    description=(
+                        "Post a top-level comment on an Instagram post. "
+                        "Requires instagram_manage_comments permission."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "media_id": {
+                                "type": "string",
+                                "description": "Instagram media ID to comment on",
+                            },
+                            "message": {
+                                "type": "string",
+                                "description": "Comment text (max 2200 characters)",
+                                "maxLength": 2200,
+                            },
+                        },
+                        "required": ["media_id", "message"],
+                    },
+                ),
+                Tool(
+                    name="reply_to_comment",
+                    description=(
+                        "Reply to a specific comment on an Instagram post. "
+                        "Requires instagram_manage_comments permission."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "comment_id": {
+                                "type": "string",
+                                "description": "Comment ID to reply to",
+                            },
+                            "message": {
+                                "type": "string",
+                                "description": "Reply text (max 2200 characters)",
+                                "maxLength": 2200,
+                            },
+                        },
+                        "required": ["comment_id", "message"],
+                    },
+                ),
+                Tool(
+                    name="delete_comment",
+                    description=(
+                        "Delete a comment on your Instagram post. "
+                        "Can only delete comments on your own media."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "comment_id": {
+                                "type": "string",
+                                "description": "Comment ID to delete",
+                            },
+                        },
+                        "required": ["comment_id"],
+                    },
+                ),
+                Tool(
+                    name="hide_comment",
+                    description=(
+                        "Hide or unhide a comment on your Instagram post. "
+                        "Hidden comments are not visible to the public."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "comment_id": {
+                                "type": "string",
+                                "description": "Comment ID to hide or unhide",
+                            },
+                            "hide": {
+                                "type": "boolean",
+                                "description": "True to hide, False to unhide",
+                                "default": True,
+                            },
+                        },
+                        "required": ["comment_id"],
+                    },
+                ),
+                # ── Hashtag Tools ────────────────────────────────
+                Tool(
+                    name="search_hashtag",
+                    description=(
+                        "Search for an Instagram hashtag and get its ID. "
+                        "Use the returned ID with get_hashtag_media to browse posts."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "hashtag_name": {
+                                "type": "string",
+                                "description": "Hashtag to search for (with or without #)",
+                            },
+                        },
+                        "required": ["hashtag_name"],
+                    },
+                ),
+                Tool(
+                    name="get_hashtag_media",
+                    description=(
+                        "Get top or recent media for a hashtag. "
+                        "Use search_hashtag first to get the hashtag ID."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "hashtag_id": {
+                                "type": "string",
+                                "description": "Hashtag ID from search_hashtag",
+                            },
+                            "media_type": {
+                                "type": "string",
+                                "enum": ["top", "recent"],
+                                "description": "Get 'top' (most popular) or 'recent' media",
+                                "default": "top",
+                            },
+                            "limit": {
+                                "type": "integer",
+                                "description": "Number of posts to retrieve (max 50)",
+                                "minimum": 1,
+                                "maximum": 50,
+                                "default": 25,
+                            },
+                        },
+                        "required": ["hashtag_id"],
+                    },
+                ),
+                # ── Story Tools ──────────────────────────────────
+                Tool(
+                    name="get_stories",
+                    description=(
+                        "Get current active stories on your Instagram account. "
+                        "Stories expire after 24 hours."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "account_id": {
+                                "type": "string",
+                                "description": "Instagram account ID (optional, uses configured account)",
+                            },
+                        },
+                    },
+                ),
+                # ── Mention Tools ────────────────────────────────
+                Tool(
+                    name="get_mentions",
+                    description=(
+                        "Get posts and media where your account has been tagged or @mentioned. "
+                        "Useful for tracking user-generated content about your brand."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "limit": {
+                                "type": "integer",
+                                "description": "Number of mentions to retrieve (max 100)",
+                                "minimum": 1,
+                                "maximum": 100,
+                                "default": 25,
+                            },
+                        },
+                    },
+                ),
+                # ── Business Discovery Tools ─────────────────────
+                Tool(
+                    name="business_discovery",
+                    description=(
+                        "Look up another public Business or Creator account's profile. "
+                        "Returns their bio, follower count, media count, etc. "
+                        "Only works for public professional accounts."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "target_username": {
+                                "type": "string",
+                                "description": "Instagram username to look up (without @)",
+                            },
+                        },
+                        "required": ["target_username"],
+                    },
+                ),
+                # ── Publishing Tools ─────────────────────────────
+                Tool(
+                    name="publish_carousel",
+                    description=(
+                        "Publish a carousel (album) post with 2-10 images or videos. "
+                        "All media must be publicly accessible URLs."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "image_urls": {
+                                "type": "array",
+                                "items": {"type": "string", "format": "uri"},
+                                "description": "List of 2-10 image/video URLs",
+                                "minItems": 2,
+                                "maxItems": 10,
+                            },
+                            "caption": {
+                                "type": "string",
+                                "description": "Caption for the carousel post (optional)",
+                            },
+                        },
+                        "required": ["image_urls"],
+                    },
+                ),
+                Tool(
+                    name="publish_reel",
+                    description=(
+                        "Publish a Reel (short-form video) to Instagram. "
+                        "Video must be publicly accessible URL, MP4 format."
+                    ),
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "video_url": {
+                                "type": "string",
+                                "format": "uri",
+                                "description": "URL of the video to publish as Reel",
+                            },
+                            "caption": {
+                                "type": "string",
+                                "description": "Caption for the Reel (optional)",
+                            },
+                            "share_to_feed": {
+                                "type": "boolean",
+                                "description": "Also share to main feed (default: true)",
+                                "default": True,
+                            },
+                        },
+                        "required": ["video_url"],
+                    },
+                ),
+                Tool(
+                    name="get_content_publishing_limit",
+                    description=(
+                        "Check how many posts you can still publish today. "
+                        "Instagram limits content publishing per 24-hour period."
+                    ),
+                    inputSchema={"type": "object", "properties": {}},
+                ),
             ]
 
         @self.server.call_tool()
@@ -479,8 +753,6 @@ class InstagramMCPServer:
                     )
 
                 elif name == "send_dm":
-                    from .models.instagram_models import SendDMRequest
-
                     request = SendDMRequest(**arguments)
                     response = await instagram_client.send_dm(request)
 
@@ -492,6 +764,171 @@ class InstagramMCPServer:
                             "timestamp": datetime.utcnow().isoformat(),
                             "note": "24-hour response window applies. Requires Advanced Access."
                         },
+                    )
+
+                # ── Comment Handlers ─────────────────────────────
+
+                elif name == "get_comments":
+                    media_id = arguments["media_id"]
+                    limit = arguments.get("limit", 25)
+                    comments = await instagram_client.get_comments(media_id, limit)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data={
+                            "media_id": media_id,
+                            "comments": [c.model_dump(mode='json') for c in comments],
+                            "count": len(comments),
+                        },
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                elif name == "post_comment":
+                    media_id = arguments["media_id"]
+                    message = arguments["message"]
+                    comment = await instagram_client.post_comment(media_id, message)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data=comment.model_dump(mode='json'),
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                elif name == "reply_to_comment":
+                    comment_id = arguments["comment_id"]
+                    message = arguments["message"]
+                    reply = await instagram_client.reply_to_comment(comment_id, message)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data=reply.model_dump(mode='json'),
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                elif name == "delete_comment":
+                    comment_id = arguments["comment_id"]
+                    await instagram_client.delete_comment(comment_id)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data={"comment_id": comment_id, "deleted": True},
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                elif name == "hide_comment":
+                    comment_id = arguments["comment_id"]
+                    hide = arguments.get("hide", True)
+                    await instagram_client.hide_comment(comment_id, hide)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data={"comment_id": comment_id, "hidden": hide},
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                # ── Hashtag Handlers ─────────────────────────────
+
+                elif name == "search_hashtag":
+                    hashtag_name = arguments["hashtag_name"]
+                    hashtag = await instagram_client.search_hashtag(hashtag_name)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data=hashtag.model_dump(mode='json'),
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                elif name == "get_hashtag_media":
+                    hashtag_id = arguments["hashtag_id"]
+                    media_type = arguments.get("media_type", "top")
+                    limit = arguments.get("limit", 25)
+                    media = await instagram_client.get_hashtag_media(hashtag_id, media_type, limit=limit)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data={
+                            "hashtag_id": hashtag_id,
+                            "media_type": media_type,
+                            "media": [m.model_dump(mode='json') for m in media],
+                            "count": len(media),
+                        },
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                # ── Story Handler ────────────────────────────────
+
+                elif name == "get_stories":
+                    account_id = arguments.get("account_id")
+                    stories = await instagram_client.get_stories(account_id)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data={
+                            "stories": [s.model_dump(mode='json') for s in stories],
+                            "count": len(stories),
+                        },
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                # ── Mention Handler ──────────────────────────────
+
+                elif name == "get_mentions":
+                    limit = arguments.get("limit", 25)
+                    mentions = await instagram_client.get_mentions(limit=limit)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data={
+                            "mentions": [m.model_dump(mode='json') for m in mentions],
+                            "count": len(mentions),
+                        },
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                # ── Business Discovery Handler ───────────────────
+
+                elif name == "business_discovery":
+                    target_username = arguments["target_username"]
+                    profile = await instagram_client.business_discovery(target_username)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data=profile.model_dump(mode='json'),
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                # ── Publishing Handlers ──────────────────────────
+
+                elif name == "publish_carousel":
+                    image_urls = arguments["image_urls"]
+                    caption = arguments.get("caption")
+                    response = await instagram_client.publish_carousel(image_urls, caption)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data=response.model_dump(mode='json'),
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                elif name == "publish_reel":
+                    video_url = arguments["video_url"]
+                    caption = arguments.get("caption")
+                    share_to_feed = arguments.get("share_to_feed", True)
+                    response = await instagram_client.publish_reel(video_url, caption, share_to_feed)
+
+                    result = MCPToolResult(
+                        success=True,
+                        data=response.model_dump(mode='json'),
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
+                    )
+
+                elif name == "get_content_publishing_limit":
+                    limit_info = await instagram_client.get_content_publishing_limit()
+
+                    result = MCPToolResult(
+                        success=True,
+                        data=limit_info.model_dump(mode='json'),
+                        metadata={"tool": name, "timestamp": datetime.utcnow().isoformat()},
                     )
 
                 else:

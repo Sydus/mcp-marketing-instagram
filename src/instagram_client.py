@@ -16,17 +16,25 @@ from PIL import Image
 from .config import get_settings
 from .models.instagram_models import (
     AccountInsight,
+    BusinessDiscoveryProfile,
+    ContentPublishingLimit,
     FacebookPage,
+    HashtagMedia,
     InsightMetric,
     InsightPeriod,
+    InstagramComment,
     InstagramConversation,
+    InstagramHashtag,
     InstagramMedia,
+    InstagramMention,
     InstagramMessage,
     InstagramProfile,
+    InstagramStory,
     MediaInsight,
     PublishMediaRequest,
     PublishMediaResponse,
     RateLimitInfo,
+    ReplyCommentRequest,
     SendDMRequest,
     SendDMResponse,
 )
@@ -250,6 +258,8 @@ class InstagramClient:
                         response = await self.client.post(url, params=params, json=data)
                     else:
                         response = await self.client.post(url, params=params)
+                elif method.upper() == "DELETE":
+                    response = await self.client.delete(url, params=params)
                 else:
                     raise ValueError(f"Unsupported HTTP method: {method}")
 
@@ -669,6 +679,358 @@ class InstagramClient:
         except Exception as e:
             logger.error("Failed to send DM", error=str(e), recipient=request.recipient_id)
             raise InstagramAPIError(f"Failed to send DM: {str(e)}")
+
+    # ── Comment Methods ───────────────────────────────────────────
+
+    async def get_comments(
+        self,
+        media_id: str,
+        limit: int = 25,
+    ) -> List[InstagramComment]:
+        """Get comments on a media post."""
+        fields = "id,text,timestamp,username,like_count,hidden"
+        params = {
+            "fields": fields,
+            "limit": min(limit, 100),
+        }
+
+        try:
+            data = await self._make_request("GET", f"{media_id}/comments", params=params)
+            comments = []
+            for item in data.get("data", []):
+                comments.append(InstagramComment(**item))
+            return comments
+        except Exception as e:
+            logger.error("Failed to get comments", error=str(e), media_id=media_id)
+            raise InstagramAPIError(f"Failed to get comments: {str(e)}")
+
+    async def reply_to_comment(
+        self,
+        comment_id: str,
+        message: str,
+    ) -> InstagramComment:
+        """Reply to a specific comment."""
+        params = {"message": message}
+
+        try:
+            data = await self._make_request("POST", f"{comment_id}/replies", data=params)
+            return InstagramComment(id=data["id"], text=message)
+        except Exception as e:
+            logger.error("Failed to reply to comment", error=str(e), comment_id=comment_id)
+            raise InstagramAPIError(f"Failed to reply to comment: {str(e)}")
+
+    async def post_comment(
+        self,
+        media_id: str,
+        message: str,
+    ) -> InstagramComment:
+        """Post a top-level comment on a media post."""
+        params = {"message": message}
+
+        try:
+            data = await self._make_request("POST", f"{media_id}/comments", data=params)
+            return InstagramComment(id=data["id"], text=message)
+        except Exception as e:
+            logger.error("Failed to post comment", error=str(e), media_id=media_id)
+            raise InstagramAPIError(f"Failed to post comment: {str(e)}")
+
+    async def delete_comment(self, comment_id: str) -> bool:
+        """Delete a comment."""
+        try:
+            await self._make_request("DELETE", comment_id)
+            return True
+        except Exception as e:
+            logger.error("Failed to delete comment", error=str(e), comment_id=comment_id)
+            raise InstagramAPIError(f"Failed to delete comment: {str(e)}")
+
+    async def hide_comment(self, comment_id: str, hide: bool = True) -> bool:
+        """Hide or unhide a comment."""
+        try:
+            await self._make_request("POST", comment_id, data={"hide": hide})
+            return True
+        except Exception as e:
+            action = "hide" if hide else "unhide"
+            logger.error(f"Failed to {action} comment", error=str(e), comment_id=comment_id)
+            raise InstagramAPIError(f"Failed to {action} comment: {str(e)}")
+
+    # ── Hashtag Methods ──────────────────────────────────────────
+
+    async def search_hashtag(
+        self,
+        hashtag_name: str,
+        account_id: Optional[str] = None,
+    ) -> InstagramHashtag:
+        """Search for a hashtag ID by name."""
+        if not account_id:
+            account_id = self.settings.instagram_business_account_id
+        if not account_id:
+            raise InstagramAPIError("Instagram business account ID not configured")
+
+        params = {
+            "q": hashtag_name.lstrip("#"),
+            "user_id": account_id,
+        }
+
+        try:
+            data = await self._make_request("GET", "ig_hashtag_search", params=params)
+            results = data.get("data", [])
+            if not results:
+                raise InstagramAPIError(f"Hashtag '{hashtag_name}' not found")
+            return InstagramHashtag(**results[0])
+        except InstagramAPIError:
+            raise
+        except Exception as e:
+            logger.error("Failed to search hashtag", error=str(e), hashtag=hashtag_name)
+            raise InstagramAPIError(f"Failed to search hashtag: {str(e)}")
+
+    async def get_hashtag_media(
+        self,
+        hashtag_id: str,
+        media_type: str = "top",
+        account_id: Optional[str] = None,
+        limit: int = 25,
+    ) -> List[HashtagMedia]:
+        """Get top or recent media for a hashtag."""
+        if not account_id:
+            account_id = self.settings.instagram_business_account_id
+        if not account_id:
+            raise InstagramAPIError("Instagram business account ID not configured")
+
+        if media_type not in ("top", "recent"):
+            raise InstagramAPIError("media_type must be 'top' or 'recent'")
+
+        fields = "id,media_type,media_url,permalink,caption,timestamp,like_count,comments_count"
+        params = {
+            "user_id": account_id,
+            "fields": fields,
+            "limit": min(limit, 50),
+        }
+
+        try:
+            endpoint = f"{hashtag_id}/{media_type}_media"
+            data = await self._make_request("GET", endpoint, params=params)
+            media_list = []
+            for item in data.get("data", []):
+                media_list.append(HashtagMedia(**item))
+            return media_list
+        except Exception as e:
+            logger.error("Failed to get hashtag media", error=str(e), hashtag_id=hashtag_id)
+            raise InstagramAPIError(f"Failed to get hashtag media: {str(e)}")
+
+    # ── Story Methods ────────────────────────────────────────────
+
+    async def get_stories(
+        self,
+        account_id: Optional[str] = None,
+    ) -> List[InstagramStory]:
+        """Get current stories for the account."""
+        if not account_id:
+            account_id = self.settings.instagram_business_account_id
+        if not account_id:
+            raise InstagramAPIError("Instagram business account ID not configured")
+
+        fields = "id,media_type,media_url,timestamp"
+        params = {"fields": fields}
+
+        try:
+            data = await self._make_request("GET", f"{account_id}/stories", params=params)
+            stories = []
+            for item in data.get("data", []):
+                stories.append(InstagramStory(**item))
+            return stories
+        except Exception as e:
+            logger.error("Failed to get stories", error=str(e))
+            raise InstagramAPIError(f"Failed to get stories: {str(e)}")
+
+    # ── Mention Methods ──────────────────────────────────────────
+
+    async def get_mentions(
+        self,
+        account_id: Optional[str] = None,
+        limit: int = 25,
+    ) -> List[InstagramMention]:
+        """Get recent mentions (posts/comments that @mention you)."""
+        if not account_id:
+            account_id = self.settings.instagram_business_account_id
+        if not account_id:
+            raise InstagramAPIError("Instagram business account ID not configured")
+
+        fields = "id,media_type,media_url,permalink,caption,timestamp,username"
+        params = {
+            "fields": fields,
+            "limit": min(limit, 100),
+        }
+
+        try:
+            data = await self._make_request("GET", f"{account_id}/tags", params=params)
+            mentions = []
+            for item in data.get("data", []):
+                mentions.append(InstagramMention(**item))
+            return mentions
+        except Exception as e:
+            logger.error("Failed to get mentions", error=str(e))
+            raise InstagramAPIError(f"Failed to get mentions: {str(e)}")
+
+    # ── Business Discovery Methods ───────────────────────────────
+
+    async def business_discovery(
+        self,
+        target_username: str,
+        account_id: Optional[str] = None,
+    ) -> BusinessDiscoveryProfile:
+        """Look up another business/creator account's public profile."""
+        if not account_id:
+            account_id = self.settings.instagram_business_account_id
+        if not account_id:
+            raise InstagramAPIError("Instagram business account ID not configured")
+
+        discovery_fields = (
+            "username,name,biography,website,"
+            "followers_count,follows_count,media_count,profile_picture_url"
+        )
+        params = {
+            "fields": f"business_discovery.fields({discovery_fields}){{username,name,biography,website,followers_count,follows_count,media_count,profile_picture_url}}",
+        }
+
+        try:
+            # Use the simpler approach: fields=business_discovery.fields(...)
+            simple_params = {
+                "fields": f"business_discovery.fields({discovery_fields})",
+            }
+            data = await self._make_request("GET", account_id, params=simple_params)
+            bd = data.get("business_discovery", {})
+            if not bd:
+                raise InstagramAPIError(f"Could not find business account: {target_username}")
+            return BusinessDiscoveryProfile(**bd)
+        except InstagramAPIError:
+            raise
+        except Exception as e:
+            logger.error("Failed business discovery", error=str(e), target=target_username)
+            raise InstagramAPIError(f"Failed business discovery: {str(e)}")
+
+    # ── Carousel / Reels Publishing ──────────────────────────────
+
+    async def publish_carousel(
+        self,
+        image_urls: List[str],
+        caption: Optional[str] = None,
+    ) -> PublishMediaResponse:
+        """Publish a carousel (album) post with multiple images/videos."""
+        account_id = self.settings.instagram_business_account_id
+        if not account_id:
+            raise InstagramAPIError("Instagram business account ID not configured")
+
+        if len(image_urls) < 2:
+            raise InstagramAPIError("Carousel requires at least 2 items")
+        if len(image_urls) > 10:
+            raise InstagramAPIError("Carousel supports maximum 10 items")
+
+        try:
+            # Step 1: Create individual item containers
+            container_ids = []
+            for url in image_urls:
+                is_video = any(url.lower().endswith(ext) for ext in (".mp4", ".mov"))
+                container_data = {
+                    "is_carousel_item": "true",
+                }
+                if is_video:
+                    container_data["video_url"] = url
+                    container_data["media_type"] = "VIDEO"
+                else:
+                    container_data["image_url"] = url
+
+                resp = await self._make_request(
+                    "POST", f"{account_id}/media", data=container_data
+                )
+                container_ids.append(resp["id"])
+
+            # Step 2: Create carousel container
+            carousel_data = {
+                "media_type": "CAROUSEL",
+                "children": ",".join(container_ids),
+            }
+            if caption:
+                carousel_data["caption"] = caption
+
+            carousel_resp = await self._make_request(
+                "POST", f"{account_id}/media", data=carousel_data
+            )
+
+            # Step 3: Publish
+            publish_resp = await self._make_request(
+                "POST",
+                f"{account_id}/media_publish",
+                data={"creation_id": carousel_resp["id"]},
+            )
+            return PublishMediaResponse(id=publish_resp["id"], success=True)
+
+        except Exception as e:
+            logger.error("Failed to publish carousel", error=str(e))
+            raise InstagramAPIError(f"Failed to publish carousel: {str(e)}")
+
+    async def publish_reel(
+        self,
+        video_url: str,
+        caption: Optional[str] = None,
+        share_to_feed: bool = True,
+    ) -> PublishMediaResponse:
+        """Publish a Reel."""
+        account_id = self.settings.instagram_business_account_id
+        if not account_id:
+            raise InstagramAPIError("Instagram business account ID not configured")
+
+        try:
+            # Step 1: Create reel container
+            container_data = {
+                "media_type": "REELS",
+                "video_url": video_url,
+                "share_to_feed": str(share_to_feed).lower(),
+            }
+            if caption:
+                container_data["caption"] = caption
+
+            container_resp = await self._make_request(
+                "POST", f"{account_id}/media", data=container_data
+            )
+
+            # Step 2: Publish
+            publish_resp = await self._make_request(
+                "POST",
+                f"{account_id}/media_publish",
+                data={"creation_id": container_resp["id"]},
+            )
+            return PublishMediaResponse(id=publish_resp["id"], success=True)
+
+        except Exception as e:
+            logger.error("Failed to publish reel", error=str(e))
+            raise InstagramAPIError(f"Failed to publish reel: {str(e)}")
+
+    # ── Content Publishing Limit ─────────────────────────────────
+
+    async def get_content_publishing_limit(
+        self,
+        account_id: Optional[str] = None,
+    ) -> ContentPublishingLimit:
+        """Check how many more posts you can publish today."""
+        if not account_id:
+            account_id = self.settings.instagram_business_account_id
+        if not account_id:
+            raise InstagramAPIError("Instagram business account ID not configured")
+
+        params = {"fields": "quota_usage,config,quota_duration"}
+
+        try:
+            data = await self._make_request(
+                "GET", f"{account_id}/content_publishing_limit", params=params
+            )
+            # API returns {"data": [{ ... }]}
+            items = data.get("data", [])
+            if items:
+                return ContentPublishingLimit(**items[0])
+            return ContentPublishingLimit()
+        except Exception as e:
+            logger.error("Failed to get publishing limit", error=str(e))
+            raise InstagramAPIError(f"Failed to get publishing limit: {str(e)}")
 
     def get_rate_limit_info(self) -> RateLimitInfo:
         """Get current rate limit information."""

@@ -305,3 +305,139 @@ class SendDMResponse(BaseModel):
     message_id: str
     recipient_id: str
     success: bool = True
+
+
+# ── Comment Models ──────────────────────────────────────────────
+
+
+class InstagramComment(BaseModel):
+    """Instagram comment on a media post."""
+
+    id: str
+    text: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    username: Optional[str] = None
+    like_count: Optional[int] = None
+    replies: Optional[List["InstagramComment"]] = None
+    hidden: Optional[bool] = None
+
+    @field_validator("timestamp", mode="before")
+    @classmethod
+    def parse_timestamp(cls, v):
+        if isinstance(v, str):
+            return datetime.fromisoformat(v.replace("Z", "+00:00"))
+        return v
+
+
+class ReplyCommentRequest(BaseModel):
+    """Request to reply to a comment or post a comment on media."""
+
+    media_id: Optional[str] = None
+    comment_id: Optional[str] = None
+    message: str = Field(..., description="Comment text")
+
+    @field_validator("message")
+    @classmethod
+    def validate_message_length(cls, v):
+        if len(v) > 2200:
+            raise ValueError("Comment must be 2200 characters or less")
+        return v
+
+
+# ── Hashtag Models ──────────────────────────────────────────────
+
+
+class InstagramHashtag(BaseModel):
+    """Instagram hashtag info."""
+
+    id: str
+    name: Optional[str] = None
+
+
+class HashtagMedia(BaseModel):
+    """Media from a hashtag search."""
+
+    id: str
+    media_type: Optional[MediaType] = None
+    media_url: Optional[str] = None
+    permalink: Optional[str] = None
+    caption: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    like_count: Optional[int] = None
+    comments_count: Optional[int] = None
+
+    @field_validator("timestamp", mode="before")
+    @classmethod
+    def parse_timestamp(cls, v):
+        if isinstance(v, str):
+            return datetime.fromisoformat(v.replace("Z", "+00:00"))
+        return v
+
+
+# ── Story Models ────────────────────────────────────────────────
+
+
+class InstagramStory(BaseModel):
+    """Instagram story item."""
+
+    id: str
+    media_type: Optional[MediaType] = None
+    media_url: Optional[str] = None
+    timestamp: Optional[datetime] = None
+
+    @field_validator("timestamp", mode="before")
+    @classmethod
+    def parse_timestamp(cls, v):
+        if isinstance(v, str):
+            return datetime.fromisoformat(v.replace("Z", "+00:00"))
+        return v
+
+
+# ── Mention Models ──────────────────────────────────────────────
+
+
+class InstagramMention(BaseModel):
+    """Instagram mention (someone tagged/mentioned you)."""
+
+    id: str
+    media_type: Optional[MediaType] = None
+    media_url: Optional[str] = None
+    permalink: Optional[str] = None
+    caption: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    username: Optional[str] = None
+
+    @field_validator("timestamp", mode="before")
+    @classmethod
+    def parse_timestamp(cls, v):
+        if isinstance(v, str):
+            return datetime.fromisoformat(v.replace("Z", "+00:00"))
+        return v
+
+
+# ── Business Discovery Models ───────────────────────────────────
+
+
+class BusinessDiscoveryProfile(BaseModel):
+    """Profile information from business discovery."""
+
+    id: str
+    username: Optional[str] = None
+    name: Optional[str] = None
+    biography: Optional[str] = None
+    website: Optional[str] = None
+    followers_count: Optional[int] = None
+    follows_count: Optional[int] = None
+    media_count: Optional[int] = None
+    profile_picture_url: Optional[str] = None
+
+
+# ── Content Publishing Limit Model ──────────────────────────────
+
+
+class ContentPublishingLimit(BaseModel):
+    """Content publishing limit info."""
+
+    quota_usage: Optional[int] = None
+    config: Optional[Dict[str, Any]] = None
+    quota_duration: Optional[int] = None
