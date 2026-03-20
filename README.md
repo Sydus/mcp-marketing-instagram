@@ -466,6 +466,93 @@ Enable debug logging by setting:
 LOG_LEVEL=DEBUG
 ```
 
+### Troubleshooting
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| `me/accounts` returns empty `[]` | IG not connected to a Facebook Page, or you're not Page admin | Do Step 1 |
+| Graph API Explorer says "No configuration available" | Permissions not added to app | Do Step 3 |
+| "Generate Access Token" is disabled | Need to select "Get User Access Token" first | Click "Get Token" dropdown |
+| App name rejected (contains "IG", "Insta", etc.) | Meta blocks trademarked words | Use a generic name |
+| Token expired | Short-lived tokens last 1 hour | Do Step 6 for 60-day token |
+| `(#10) To use Instagram Graph API...` | IG account is Personal, not Business | Switch to Business/Creator in IG settings |
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `INSTAGRAM_ACCESS_TOKEN` | Yes | — | Meta long-lived access token |
+| `INSTAGRAM_ACCOUNT_ID` | Yes | — | Instagram business account ID |
+| `INSTAGRAM_API_VERSION` | No | `v19.0` | Graph API version |
+
+## Tools (23)
+
+### Profile & Account
+| Tool | Description |
+|------|-------------|
+| `get_profile_info` | Get profile info (bio, followers, media count) |
+| `get_account_pages` | List connected Facebook pages |
+| `get_account_insights` | Account-level analytics (reach, profile views) |
+| `validate_access_token` | Check if token is valid |
+
+### Media & Publishing
+| Tool | Description |
+|------|-------------|
+| `get_media_posts` | Get recent posts with engagement metrics |
+| `get_media_insights` | Detailed analytics for a specific post |
+| `publish_media` | Publish image or video |
+| `publish_carousel` | Publish carousel (2-10 images/videos) |
+| `publish_reel` | Publish a Reel |
+| `get_content_publishing_limit` | Check daily publishing quota |
+
+### Comments
+| Tool | Description |
+|------|-------------|
+| `get_comments` | Get comments on a post |
+| `post_comment` | Post a comment |
+| `reply_to_comment` | Reply to a comment |
+| `delete_comment` | Delete a comment |
+| `hide_comment` | Hide/unhide a comment |
+
+### Direct Messages
+| Tool | Description |
+|------|-------------|
+| `get_conversations` | List DM conversations |
+| `get_conversation_messages` | Read messages in a conversation |
+| `send_dm` | Send a direct message |
+
+### Discovery & Content
+| Tool | Description |
+|------|-------------|
+| `search_hashtag` | Search for a hashtag ID |
+| `get_hashtag_media` | Get top/recent media for a hashtag |
+| `get_stories` | Get current active stories |
+| `get_mentions` | Get posts you're tagged in |
+| `business_discovery` | Look up another business account |
+
+## Limitations
+
+These are Instagram Graph API limitations, not this tool's:
+
+- **Business/Creator accounts only** — personal accounts are not supported
+- **Long-lived tokens expire after 60 days** — refresh before expiry
+- **200 API calls per hour** rate limit
+- **25 posts per day** publishing limit
+- **DMs require Advanced Access** — Meta app review required
+- **Hashtag search**: 30 unique hashtags per 7 days
+
+## Credits
+
+TypeScript rewrite of [jlbadano/ig-mcp](https://github.com/jlbadano/ig-mcp) (Python).
+
+## More from @mcpware
+
+| Project | What it does | Install |
+|---------|---|---|
+| **[Pagecast](https://github.com/mcpware/pagecast)** | Record any browser page as GIF or video via MCP | `npx @mcpware/pagecast` |
+| **[UI Annotator](https://github.com/mcpware/ui-annotator-mcp)** | Hover any element to see its name — zero extensions, any browser | `npx @mcpware/ui-annotator` |
+| **[Claude Code Organizer](https://github.com/mcpware/claude-code-organizer)** | Visual dashboard for memories, skills, MCP servers, hooks | `npx @mcpware/claude-code-organizer` |
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
