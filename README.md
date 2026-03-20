@@ -1,7 +1,12 @@
 [![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/7bde8131-7019-405f-89d1-cef574a8129a)
 
 [![MSeeP.ai Security Assessment Badge](https://mseep.net/pr/jlbadano-ig-mcp-badge.png)](https://mseep.ai/app/jlbadano-ig-mcp)
-# Instagram MCP Server
+# @mcpware/instagram-mcp
+
+[![npm version](https://img.shields.io/npm/v/@mcpware/instagram-mcp)](https://www.npmjs.com/package/@mcpware/instagram-mcp)
+[![license](https://img.shields.io/github/license/mcpware/instagram-mcp)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/mcpware/instagram-mcp?style=social)](https://github.com/mcpware/instagram-mcp)
+[![GitHub forks](https://img.shields.io/github/forks/mcpware/instagram-mcp?style=social)](https://github.com/mcpware/instagram-mcp/fork)
 
 A Model Context Protocol (MCP) server that provides seamless integration with Instagram's Graph API, enabling AI applications to interact with Instagram Business accounts programmatically.
 
