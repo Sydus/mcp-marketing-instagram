@@ -554,10 +554,10 @@ TypeScript rewrite of [jlbadano/ig-mcp](https://github.com/jlbadano/ig-mcp) (Pyt
 
 | Project | What it does | Install |
 |---------|---|---|
-| **[Pagecast](https://github.com/mcpware/pagecast)** | Record any browser page as GIF or video via MCP | `npx @mcpware/pagecast` |
-| **[UI Annotator](https://github.com/mcpware/ui-annotator-mcp)** | Hover any element to see its name — zero extensions, any browser | `npx @mcpware/ui-annotator` |
-| **[Claude Code Organizer](https://github.com/mcpware/claude-code-organizer)** | Visual dashboard for memories, skills, MCP servers, hooks | `npx @mcpware/claude-code-organizer` |
-
+| **[Claude Code Organizer](https://github.com/mcpware/claude-code-organizer)** | Visual dashboard for Claude Code memories, skills, MCP servers, hooks | `npx @mcpware/claude-code-organizer` |
+| **[UI Annotator](https://github.com/mcpware/ui-annotator-mcp)** | Hover labels on any web page — AI references elements by name | `npx @mcpware/ui-annotator` |
+| **[Pagecast](https://github.com/mcpware/pagecast)** | Record browser sessions as GIF or video via MCP | `npx @mcpware/pagecast` |
+| **[LogoLoom](https://github.com/mcpware/logoloom)** | AI logo design → SVG → full brand kit export | `npx @mcpware/logoloom` |
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
