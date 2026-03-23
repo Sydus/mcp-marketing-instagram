@@ -4,6 +4,7 @@
 # @mcpware/instagram-mcp
 
 [![npm version](https://img.shields.io/npm/v/@mcpware/instagram-mcp)](https://www.npmjs.com/package/@mcpware/instagram-mcp)
+[![npm downloads](https://img.shields.io/npm/dt/@mcpware/instagram-mcp?label=downloads)](https://www.npmjs.com/package/@mcpware/instagram-mcp)
 [![license](https://img.shields.io/github/license/mcpware/instagram-mcp)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/mcpware/instagram-mcp?style=social)](https://github.com/mcpware/instagram-mcp)
 [![GitHub forks](https://img.shields.io/github/forks/mcpware/instagram-mcp?style=social)](https://github.com/mcpware/instagram-mcp/fork)
