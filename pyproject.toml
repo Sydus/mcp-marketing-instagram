@@ -1,0 +1,27 @@
+[project]
+name = "mcp-marketing-instagram"
+version = "0.1.0"
+description = "Agent24 Marketing MCP — Instagram (post, reels, stories, caroselli, insights)"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]>=1.2.9",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "httpx>=0.27.0",
+    "redis[hiredis]>=5.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "structlog>=23.0.0",
+    "asyncio-throttle>=1.0.0",
+    "Pillow>=10.0.0",
+]
+
+[project.scripts]
+mcp-marketing-instagram = "mcp_instagram.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mcp_instagram", "src"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
