@@ -1,4 +1,4 @@
-"""mcp-marketing-instagram — server Agent24 pattern."""
+"""mcp-marketing-instagram  — server Agent24 pattern."""
 from __future__ import annotations
 import os
 import sys
